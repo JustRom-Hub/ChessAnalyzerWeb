@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ChessAnalyzer PWA</title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0d0d12">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    
+    <link rel="stylesheet" href="./css/styles.css">
+    <!-- PDF Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Audio Elements -->
+    <audio id="snd-move" src="https://lichess1.org/assets/sound/standard/Move.ogg" preload="auto"></audio>
+    <audio id="snd-capture" src="https://lichess1.org/assets/sound/standard/Capture.ogg" preload="auto"></audio>
+    <audio id="snd-check" src="https://lichess1.org/assets/sound/standard/Check.ogg" preload="auto"></audio>
+    <audio id="snd-castle" src="https://lichess1.org/assets/sound/standard/Castle.ogg" preload="auto"></audio>
+    <audio id="snd-victory" src="https://lichess1.org/assets/sound/standard/Victory.ogg" preload="auto"></audio>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="glass-panel">
+            <h1 class="logo">♛ Chess<span class="highlight">Analyzer</span></h1>
+            <p>Análisis Local & Offline impulsado por Stockfish WebAssembly</p>
+        </header>
+
+        <!-- Main Layout -->
+        <main class="main-grid">
+            
+            <!-- Left Column: Board & Eval -->
+            <div class="board-column glass-panel">
+                <div class="board-wrapper" style="min-height: 350px;">
+                    <div id="eval-bar-container">
+                        <div id="eval-bar-fill"></div>
+                    </div>
+                    <div id="board"></div>
+                </div>
+                <div class="controls">
+                    <button id="btn-prev" class="btn" disabled>⏮ Ant</button>
+                    <button id="btn-play" class="btn mix-btn" disabled>▶ Auto</button>
+                    <button id="btn-next" class="btn" disabled>Sig ⏭</button>
+                    <button id="btn-back-main" class="btn hidden" style="border-color: var(--accent);">↶ Línea Principal</button>
+                </div>
+            </div>
+
+            <!-- Right Column: Analysis & PGN -->
+            <div class="analysis-column">
+                
+                <!-- Input Panel -->
+                <div class="glass-panel input-panel" id="panel-input">
+                    <h2>Cargar Partida</h2>
+                    
+                    <div class="upload-area">
+                        <label for="pgn-file" class="btn upload-label">
+                            📁 Subir Archivo .PGN
+                        </label>
+                        <input type="file" id="pgn-file" accept=".pgn" style="display: none;">
+                        <span id="file-name-display" style="margin-left: 10px; font-size: 0.85em; color:var(--text-secondary);">Ningún archivo...</span>
+                    </div>
+
+                    <p style="text-align:center; font-size:0.85em; color:var(--text-secondary); margin: 10px 0;">O pega el texto manualmente aquí:</p>
+
+                    <textarea id="pgn-input" placeholder="Texto del archivo PGN aquí..."></textarea>
+                    
+                    <div class="flex-actions" style="margin-top: 15px;">
+                        <button id="btn-analyze" class="btn primary-btn">Analizar Partida 🚀</button>
+                    </div>
+
+                    <div id="init-engine-status" style="text-align:center; margin-top:15px; font-weight:bold; color:var(--blunder);">
+                        ⏳ Descargando motor Stockfish a tu navegador...
+                    </div>
+                </div>
+
+                <!-- Results Panel (Hidden initally) -->
+                <div class="glass-panel results-panel hidden" id="panel-results">
+                    <h2>Resumen de Partida</h2>
+                    <div id="opening-info" class="opening-badge">Detectando Apertura...</div>
+                    
+                    <div class="accuracy-boxes">
+                        <div class="acc-box white-box">
+                            <h4>Blancas</h4>
+                            <div class="acc-val" id="acc-white">--%</div>
+                        </div>
+                        <div class="acc-box black-box">
+                            <h4>Negras</h4>
+                            <div class="acc-val" id="acc-black">--%</div>
+                        </div>
+                    </div>
+
+                    <!-- RESUMEN EXTENDIDO -->
+                    <div id="extended-summary" class="summary-grid hidden">
+                        <div class="summary-item">
+                            <span class="label">Pérdida Media (ACPL)</span>
+                            <span class="value" id="acpl-val">--</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Jugadas Brillantes</span>
+                            <span class="value ann-brilliant" id="brilliant-count">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-actions" style="margin-bottom: 20px;">
+                        <button id="btn-pdf" class="btn primary-btn" style="padding: 10px; font-size: 0.9rem;">📄 Exportar Reporte PDF</button>
+                    </div>
+                    
+                    <!-- EXPLICACIÓN DEL PORCENTAJE -->
+                    <p class="explanation-text">
+                       * El Porcentaje de Precisión se calcula mediante el Modelo Avanzado Win% del Motor. Evalúa la matemática de 'cuánta expectativa de victoria perdiste' real comparado con el movimiento perfecto de la máquina.
+                    </p>
+
+                    <!-- LEYENDA CLÁSICA DE SIMBOLOS -->
+                    <div class="legend">
+                        <strong>Simbología:</strong> 
+                        <span class="ann-brilliant">!! (Brillante)</span> | 
+                        <span class="ann-great">! (Excelente)</span> | 
+                        <span class="ann-blunder">?? (Error Grave)</span> | 
+                        <span class="ann-mistake">? (Mala)</span> | 
+                        <span class="ann-inaccuracy">?! (Imprecisión)</span>
+                    </div>
+
+                    <div class="analysis-details">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <h3>Detalle Analítico</h3>
+                            <span id="analysis-timer" style="font-weight:bold; color:var(--accent); font-size:0.9em; font-family:'Outfit', monospace;"></span>
+                        </div>
+                        <div id="eval-text" class="eval-live">Análisis...</div>
+                        <p id="best-move-hint" class="best-move"></p>
+                    </div>
+
+                    <!-- Moves Table -->
+                    <div class="moves-container">
+                        <table id="moves-table">
+                            <thead>
+                                <tr><th>#</th><th>Blancas</th><th>Negras</th></tr>
+                            </thead>
+                            <tbody id="moves-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    
+    <script src="./js/app.js?v=1.1"></script>
+    
+    <script>
+        if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(r => console.log('SW registered!')).catch(e => console.log('SW failed: ', e));
+            });
+        }
+    </script>
+</body>
+</html>
