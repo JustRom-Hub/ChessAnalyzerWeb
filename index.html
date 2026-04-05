@@ -34,17 +34,26 @@
             
             <!-- Left Column: Board & Eval -->
             <div class="board-column glass-panel">
-                <div class="board-wrapper" style="min-height: 350px;">
+                <div id="board-wrapper" class="board-wrapper" style="min-height: 350px;">
                     <div id="eval-bar-container">
                         <div id="eval-bar-fill"></div>
                     </div>
                     <div id="board"></div>
                 </div>
+
+                <!-- Panel de Variante (oculto por defecto) -->
+                <div id="variation-panel" class="variation-panel hidden">
+                    <div class="variation-header">
+                        <span class="var-badge">🔀 MODO VARIANTE</span>
+                        <button id="btn-back-main" class="btn btn-exit-var">↶ Volver a Línea Principal</button>
+                    </div>
+                    <div id="variation-moves-line" class="variation-moves-line"></div>
+                </div>
+
                 <div class="controls">
                     <button id="btn-prev" class="btn" disabled>⏮ Ant</button>
                     <button id="btn-play" class="btn mix-btn" disabled>▶ Auto</button>
                     <button id="btn-next" class="btn" disabled>Sig ⏭</button>
-                    <button id="btn-back-main" class="btn hidden" style="border-color: var(--accent);">↶ Línea Principal</button>
                 </div>
             </div>
 
@@ -152,7 +161,7 @@
     <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     
-    <script src="./js/app.js?v=1.1"></script>
+    <script src="./js/app.js?v=2.0"></script>
     
     <script>
         if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {

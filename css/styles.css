@@ -149,9 +149,12 @@ header p {
     left: 0;
     width: 100%;
     height: 50%;
-    background: linear-gradient(180deg, #fff 0%, #ddd 100%);
+    /* CORRECCIÓN: el relleno es SIEMPRE blanco — representa la ventaja de blancas.
+       El fondo negro del contenedor representa las negras.
+       Solo cambia la ALTURA según el cp. */
+    background: linear-gradient(180deg, #ffffff 0%, #e8e8e8 100%);
     transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+    box-shadow: 0 -2px 12px rgba(255, 255, 255, 0.4);
 }
 
 #board {
@@ -482,3 +485,112 @@ td:hover {
 .ann-blunder { color: var(--blunder); font-weight: 800; text-shadow: 0 0 8px rgba(250,82,82,0.4); }
 .ann-mistake { color: var(--mistake); font-weight: 800; text-shadow: 0 0 8px rgba(253,126,20,0.4);}
 .ann-inaccuracy { color: var(--inaccuracy); font-weight: 800; text-shadow: 0 0 8px rgba(252,196,25,0.4);}
+
+/* ====================================================
+   PANEL DE VARIANTES
+   ==================================================== */
+.variation-panel {
+    margin-top: 12px;
+    background: rgba(21, 170, 191, 0.08);
+    border: 1px solid rgba(21, 170, 191, 0.35);
+    border-radius: 12px;
+    padding: 12px 15px;
+    animation: var-pulse 2s ease-in-out infinite;
+}
+
+@keyframes var-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(21, 170, 191, 0.0); }
+    50%       { box-shadow: 0 0 12px 2px rgba(21, 170, 191, 0.25); }
+}
+
+.variation-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.var-badge {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: var(--brilliant);
+    text-transform: uppercase;
+    background: rgba(21, 170, 191, 0.12);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(21, 170, 191, 0.3);
+}
+
+.btn-exit-var {
+    font-size: 0.82rem;
+    padding: 6px 14px;
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(212, 175, 55, 0.08);
+}
+
+.btn-exit-var:hover {
+    background: rgba(212, 175, 55, 0.2) !important;
+    transform: translateY(-2px);
+}
+
+.variation-moves-line {
+    font-family: 'Outfit', monospace;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 2;
+    word-spacing: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+}
+
+.var-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--brilliant);
+    margin-right: 6px;
+    text-transform: uppercase;
+}
+
+.var-num {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-right: 2px;
+}
+
+.var-move {
+    cursor: pointer;
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: background 0.15s ease, color 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.var-move:hover {
+    background: rgba(21, 170, 191, 0.2);
+    color: var(--brilliant);
+    border-color: rgba(21, 170, 191, 0.4);
+}
+
+.var-move-active {
+    background: rgba(21, 170, 191, 0.25) !important;
+    color: var(--brilliant) !important;
+    border-color: rgba(21, 170, 191, 0.5) !important;
+    font-weight: 800;
+}
+
+/* Borde cyan en el tablero cuando hay variante activa */
+.variation-active {
+    border-radius: 6px;
+    box-shadow: 0 0 0 2px rgba(21, 170, 191, 0.5), 0 15px 35px rgba(0,0,0,0.6);
+    transition: box-shadow 0.4s ease;
+}
