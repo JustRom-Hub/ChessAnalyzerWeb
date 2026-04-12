@@ -1,0 +1,9 @@
+﻿# OS files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
+
+# Carpeta de datos del motor (no es parte del proyecto web)
+CHESS/
