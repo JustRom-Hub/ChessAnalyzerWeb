@@ -111,11 +111,12 @@ header p {
     margin: 0;
 }
 
-/* Grid Layout */
+/* Grid Layout - Mejorado para permitir Tablero Grande */
 .main-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(min-content, auto) 1fr;
     gap: 40px;
+    align-items: start;
 }
 
 @media (max-width: 900px) {
@@ -157,14 +158,19 @@ header p {
     box-shadow: 0 -2px 12px rgba(255, 255, 255, 0.4);
 }
 
-#board {
-    width: 100%;
-    max-width: 500px;
+#board, #board-play {
+    width: 520px; /* valor por defecto md */
+    max-width: 100%;
     border: 3px solid rgba(212, 175, 55, 0.3);
     border-radius: 6px;
     box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 25px var(--accent-glow);
     overflow: hidden;
+    background-color: rgba(0,0,0,0.2); /* Fondo para cuando no carga el tablero */
 }
+
+.board-sm { width: 340px !important; max-width: 100% !important; }
+.board-md { width: 520px !important; max-width: 100% !important; }
+.board-lg { width: 720px !important; max-width: 100% !important; }
 
 /* Wood styling for cells */
 .white-1e1d7 { background-color: var(--white-cell) !important; color: var(--black-cell) !important; }
@@ -480,9 +486,19 @@ td:hover {
 }
 
 /* Annotations */
-.ann-brilliant { color: var(--brilliant); font-weight: 800; text-shadow: 0 0 8px rgba(21,170,191,0.4); }
-.ann-great { color: var(--great); font-weight: 800; text-shadow: 0 0 8px rgba(34,139,230,0.4); }
-.ann-blunder { color: var(--blunder); font-weight: 800; text-shadow: 0 0 8px rgba(250,82,82,0.4); }
+/* ANOTACIONES DE CALIDAD (Estilo Chess.com) */
+.ann-brilliant { color: #1ba5d0 !important; font-weight: bold; text-shadow: 0 0 8px rgba(27,165,208,0.5); }
+.ann-great     { color: #5b8d44 !important; font-weight: bold; }
+.ann-best      { color: #95bb4a !important; font-weight: bold; }
+.ann-excellent { color: #95bb4a !important; }
+.ann-good      { color: #ffffff !important; }
+.ann-book      { color: #d2a15c !important; font-style: italic; }
+.ann-inaccuracy{ color: #f1c40f !important; }
+.ann-mistake   { color: #e67e22 !important; }
+.ann-blunder   { color: #e74c3c !important; font-weight: bold; }
+.ann-missed    { color: #dbac16 !important; font-weight: bold; border-bottom: 1px dashed #dbac16; }
+
+.move-num { color: var(--text-secondary); width: 35px; text-align: center; font-size: 0.9rem; }
 .ann-mistake { color: var(--mistake); font-weight: 800; text-shadow: 0 0 8px rgba(253,126,20,0.4);}
 .ann-inaccuracy { color: var(--inaccuracy); font-weight: 800; text-shadow: 0 0 8px rgba(252,196,25,0.4);}
 
@@ -593,4 +609,313 @@ td:hover {
     border-radius: 6px;
     box-shadow: 0 0 0 2px rgba(21, 170, 191, 0.5), 0 15px 35px rgba(0,0,0,0.6);
     transition: box-shadow 0.4s ease;
+}
+
+/* Marcador de jugadas legales */
+.highlight-legal {
+    position: relative;
+    cursor: pointer;
+}
+
+.highlight-legal::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 14px;
+    height: 14px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+}
+
+.black-3c85d.highlight-legal::after {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* ====================================================
+   ESTILOS DE NAVEGACIÓN Y PESTAÑAS
+   ==================================================== */
+.tab-nav {
+    display: flex;
+    gap: 15px;
+    padding: 10px 20px;
+    margin-bottom: 30px;
+    justify-content: center;
+    border-radius: 15px;
+}
+
+.tab-btn {
+    flex: 1;
+    max-width: 250px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+/* ====================================================
+   RELOJES Y INFO DE JUGADORES
+   ==================================================== */
+.game-header-info, .game-footer-info {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.player-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(0,0,0,0.4);
+    padding: 12px 25px;
+    border-radius: 18px;
+    border: 1px solid var(--glass-border);
+    width: 100%;
+    max-width: 500px;
+    justify-content: space-between;
+    margin: 5px 0;
+    transition: all 0.3s ease;
+}
+
+.player-card.active-turn {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.player-icon { font-size: 1.5rem; }
+.player-name { font-weight: 600; color: var(--text-secondary); }
+
+.clock-display {
+    font-family: 'Outfit', monospace;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    background: #000;
+    padding: 5px 15px;
+    border-radius: 8px;
+    min-width: 100px;
+    text-align: center;
+    border: 1px solid #333;
+}
+
+.clock-active {
+    color: var(--accent) !important;
+    border-color: var(--accent) !important;
+    animation: clock-pulse 1s infinite alternate;
+}
+
+@keyframes clock-pulse {
+    from { box-shadow: 0 0 5px var(--accent-glow); }
+    to { box-shadow: 0 0 15px var(--accent-glow); }
+}
+
+.game-status-bar {
+    text-align: center;
+    padding: 10px;
+    font-size: 0.9rem;
+    color: var(--accent);
+    font-weight: 600;
+    background: rgba(212, 175, 55, 0.05);
+    border-radius: 10px;
+    margin: 15px 0;
+}
+
+/* ====================================================
+   CONFIGURACIÓN DE JUEGO (DERECHA)
+   ==================================================== */
+.config-group {
+    margin-bottom: 25px;
+}
+
+.config-group label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.mode-selector, .color-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.mode-selector .btn, .color-selector .btn {
+    flex: 1;
+}
+
+.mode-selector .btn.active, .color-selector .btn.active {
+    background: rgba(212, 175, 55, 0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.custom-select {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.time-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.time-btn {
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.time-btn.active {
+    background: var(--accent);
+    color: #000;
+}
+
+.separator {
+    border: 0;
+    border-top: 1px solid var(--glass-border);
+    margin: 25px 0;
+}
+
+/* ====================================================
+   TEMAS VISUALES
+   ==================================================== */
+.swatch-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.theme-swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid white;
+    transition: transform 0.2s ease;
+}
+
+.theme-swatch:hover { transform: scale(1.1); }
+.theme-swatch.active { transform: scale(1.2); box-shadow: 0 0 10px var(--accent); }
+
+/* ====================================================
+   JUEGO EN CURSO Y RESULTADO
+   ==================================================== */
+.live-moves-container {
+    background: rgba(0,0,0,0.3);
+    padding: 15px;
+    border-radius: 12px;
+    min-height: 150px;
+    margin-bottom: 20px;
+    border: 1px solid var(--glass-border);
+}
+
+.moves-history {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-family: 'Outfit', monospace;
+}
+
+.game-move-item {
+    background: rgba(255,255,255,0.05);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* MODAL DE RESULTADO GLOBAL */
+.result-modal-container {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.4s ease;
+}
+
+.result-modal-content {
+    background: var(--glass-bg);
+    border: 1px solid var(--accent) !important;
+    padding: 50px;
+    max-width: 550px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 0 50px var(--accent-glow) !important;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.size-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.size-btn { flex: 1; font-size: 0.85rem !important; }
+.size-btn.active { background: rgba(255,255,255,0.2); border-color: var(--accent); }
+
+/* TABLA DE HISTORIAL */
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    color: var(--text-primary);
+}
+
+.history-table th, .history-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.history-table th {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.history-table tr:hover {
+    background: rgba(255,255,255,0.03);
 }

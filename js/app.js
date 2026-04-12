@@ -83,7 +83,10 @@ function handleEngineMessage({ data }) {
         else if (scoreMatch) { isMate = false; currentEval = parseInt(scoreMatch[1]); }
     }
     if (data.startsWith("bestmove")) {
-        if (resolveAnalysis) resolveAnalysis({ cp: currentEval, mate: isMate ? mateValue : null, bestLAN: currentBestMove });
+        if (resolveAnalysis) {
+            const bestLAN = data.split(' ')[1];
+            resolveAnalysis({ cp: currentEval, mate: isMate ? mateValue : null, bestLAN: (bestLAN !== '(none)') ? bestLAN : null });
+        }
     }
 }
 
@@ -99,6 +102,20 @@ async function analyzePosition(fen) {
 function cpToWinPercent(cp) {
     let c = Math.max(-10000, Math.min(10000, cp));
     return 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * c)) - 1);
+}
+
+// Auxiliar para convertir coordenadas técnicas (LAN) a formato ajedrez (SAN)
+function lanToSan(fen, lan) {
+    if (!lan || lan === 'MATE' || lan === '(none)') return lan || '—';
+    try {
+        const temp = new Chess(fen);
+        const move = temp.move({
+            from: lan.substring(0, 2),
+            to: lan.substring(2, 4),
+            promotion: lan.length > 4 ? lan[4] : 'q'
+        });
+        return move ? move.san : lan;
+    } catch(e) { return lan; }
 }
 
 // =================================================================
@@ -446,10 +463,18 @@ async function startAnalysis() {
         $('#eval-text').text(`Analizando jugada ${i + 1}/${historyMoves.length}...`);
         tempGame.move(moveSan);
 
-        let moveEval = await analyzePosition(tempGame.fen());
+        let moveEval;
+        // Si la posición tras el movimiento es MATE, no lanzamos el motor
+        if (tempGame.in_checkmate()) {
+            moveEval = { cp: 0, mate: 0, bestLAN: "MATE" };
+        } else {
+            moveEval = await analyzePosition(tempGame.fen());
+        }
+
         let sCP = tempGame.turn() === 'b' ? -moveEval.cp : moveEval.cp;
+        // CORRECCIÓN: Si es mate (M0), si le toca a las negras significa que las blancas ganaron (100%).
         let curWin = moveEval.mate !== null
-            ? (moveEval.mate > 0 ? (tempGame.turn() === 'w' ? 100 : 0) : (tempGame.turn() === 'w' ? 0 : 100))
+            ? (moveEval.mate === 0 ? (tempGame.turn() === 'b' ? 100 : 0) : (moveEval.mate > 0 ? 100 : 0))
             : cpToWinPercent(sCP);
 
         let winLoss = isWhite ? Math.max(0, prevWinProb - curWin) : Math.max(0, curWin - prevWinProb);
@@ -459,19 +484,53 @@ async function startAnalysis() {
         let errThr = isOpening ? 25 : 18;
 
         let errorClass = "Good", annotation = "";
-        if      (winLoss > errThr) { errorClass = "Blunder";    annotation = "??"; cM.blun++; }
-        else if (winLoss > 15)     { errorClass = "Mistake";    annotation = "?";  cM.mist++; }
-        else if (winLoss > innThr) { errorClass = "Inaccuracy"; annotation = "?!"; cM.inn++;  }
-        else if (winLoss < 0.2) {
-            if (winLoss < -2) { errorClass = "Brilliant"; annotation = "!!"; cM.brill++; }
-            else              { errorClass = "Great";     annotation = "!";               }
+        let isWinning = prevWinProb > 95 || prevWinProb < 5;
+        let isCritical = prevWinProb > 70 && prevWinProb < 30; // Posicion tensa
+
+        // 1. ¿Es jugada de Libro (Apertura)?
+        let isBook = i < 12; // Simplificación por ahora, o usar detectOpening individualmente
+        
+        // Convertir sugerencia a SAN para comparar
+        let readableBest = lanToSan(tempGame.fen(), moveEval.bestLAN);
+
+        // 2. ¿Es la mejor jugada del motor?
+        let isBestMove = (moveSan === readableBest);
+
+        if (isBook) {
+            errorClass = "Book"; annotation = "";
+        } else if (isBestMove) {
+            errorClass = "Best"; annotation = "";
+        } else if (winLoss > errThr) {
+            // ¿Teníamos una ventaja ganadora y la perdimos? (Missed Win)
+            if ((isWhite && prevWinProb > 85 && curWin < 40) || (!isWhite && prevWinProb < 15 && curWin > 60)) {
+                errorClass = "Missed"; annotation = "x";
+            } else {
+                errorClass = "Blunder"; annotation = "??"; cM.blun++;
+            }
+        } else if (winLoss > 15) {
+            errorClass = "Mistake"; annotation = "?"; cM.mist++;
+        } else if (winLoss > innThr) {
+            errorClass = "Inaccuracy"; annotation = "?!"; cM.inn++;
+        } else if (winLoss < 2) {
+            if (winLoss < -2) {
+                errorClass = "Brilliant"; annotation = "!!"; cM.brill++;
+            } else if (winLoss < 0.2) {
+                // Solo marcar Great si era una posición difícil o única jugada buena
+                if (isCritical || !isWinning) {
+                    errorClass = "Great"; annotation = "!"; cM.great++;
+                } else {
+                    errorClass = "Excellent"; annotation = "";
+                }
+            } else {
+                errorClass = "Excellent"; annotation = "";
+            }
         }
 
         if (isWhite) whiteWinDiffs.push(winLoss); else blackWinDiffs.push(winLoss);
 
         analyzedMoves.push({
             san: moveSan, annotation, cp: sCP, mate: moveEval.mate,
-            class: errorClass, best: moveEval.bestLAN, winPct: curWin, fen: tempGame.fen()
+            class: errorClass, best: readableBest, winPct: curWin, fen: tempGame.fen()
         });
 
         if (isWhite) {

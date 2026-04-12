@@ -29,8 +29,15 @@
             <p>Análisis Local & Offline impulsado por Stockfish WebAssembly</p>
         </header>
 
-        <!-- Main Layout -->
-        <main class="main-grid">
+        <!-- Navegación por Pestañas -->
+        <nav class="tab-nav glass-panel">
+            <button id="tab-analyze" class="tab-btn active" onclick="switchTab('analyze')">📊 Analizar Partida</button>
+            <button id="tab-play" class="tab-btn" onclick="switchTab('play')">🎮 Jugar Partida</button>
+            <button id="tab-history" class="tab-btn" onclick="switchTab('history')">📜 Historial</button>
+        </nav>
+
+        <!-- SECCIÓN DE ANÁLISIS (Existente) -->
+        <main id="section-analyze" class="main-grid app-section">
             
             <!-- Left Column: Board & Eval -->
             <div class="board-column glass-panel">
@@ -155,6 +162,149 @@
             </div>
             
         </main>
+
+        <!-- SECCIÓN DE JUEGO (Nueva) -->
+        <main id="section-play" class="main-grid app-section hidden">
+            <!-- Columna Izquierda: Tablero de Juego y Relojes -->
+            <div class="board-column glass-panel">
+                <div class="game-header-info">
+                    <div id="player-card-black" class="player-card">
+                        <span class="player-icon">♚</span>
+                        <span class="player-name">Oponente</span>
+                        <div id="clock-black" class="clock-display">♾</div>
+                    </div>
+                </div>
+
+                <div id="board-play-wrapper" class="board-wrapper">
+                    <div id="board-play"></div>
+                </div>
+
+                <div class="game-footer-info">
+                    <div id="player-card-white" class="player-card">
+                        <span class="player-icon">♔</span>
+                        <span class="player-name">Tú</span>
+                        <div id="clock-white" class="clock-display">♾</div>
+                    </div>
+                </div>
+
+                <div id="game-turn-info" class="game-status-bar">Selecciona una configuración para empezar</div>
+
+                <div class="controls game-controls">
+                    <button class="btn" onclick="resignGame()">🏳 Rendirse</button>
+                    <button class="btn" onclick="resetToConfig()">🔄 Nueva Partida</button>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Configuración y Jugadas -->
+            <div class="analysis-column">
+                <!-- Panel de Configuración Inicial -->
+                <div id="play-config" class="glass-panel config-panel">
+                    <h2>Configuración de Partida</h2>
+                    
+                    <div class="config-group">
+                        <label>Modo de Juego</label>
+                        <div class="mode-selector">
+                            <button class="btn mode-btn active" data-mode="hvc">💻 vs Computadora</button>
+                            <button class="btn mode-btn" data-mode="hvh">👥 vs Humano</button>
+                        </div>
+                    </div>
+
+                    <div id="hvc-controls" class="config-group">
+                        <label>Tu Color</label>
+                        <div class="color-selector">
+                            <button class="btn color-btn active" data-color="w">Blancas</button>
+                            <button class="btn color-btn" data-color="random">Aleatorio</button>
+                            <button class="btn color-btn" data-color="b">Negras</button>
+                        </div>
+
+                        <label>Dificultad Stockfish</label>
+                        <select id="cpu-difficulty" class="custom-select"></select>
+                    </div>
+
+                    <div class="config-group">
+                        <label>Control de Tiempo</label>
+                        <div id="time-presets" class="time-grid"></div>
+                    </div>
+
+                    <hr class="separator">
+
+                    <div class="config-group">
+                        <label>Temas Visuales</label>
+                        <div class="theme-selectors">
+                            <div class="theme-subgroup">
+                                <span>Tablero:</span>
+                                <div id="board-themes" class="swatch-grid"></div>
+                            </div>
+                            <div class="theme-subgroup" style="margin-top:10px;">
+                                <span>Piezas:</span>
+                                <select id="piece-themes" class="custom-select"></select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="config-group">
+                        <label>Tamaño del Tablero</label>
+                        <div class="size-selector">
+                            <button class="btn size-btn" data-size="sm">Pequeño</button>
+                            <button class="btn size-btn active" data-size="md">Mediano</button>
+                            <button class="btn size-btn" data-size="lg">Grande</button>
+                        </div>
+                    </div>
+
+                    <button class="btn primary-btn start-game-btn" onclick="startGame()">¡EMPEZAR PARTIDA! 🚀</button>
+                </div>
+
+                <!-- Panel de Juego Activo -->
+                <div id="play-game" class="glass-panel game-panel hidden">
+                    <h2>Partida en Curso</h2>
+                    <div class="live-moves-container">
+                        <div id="game-moves-list" class="moves-history"></div>
+                    </div>
+                    
+                    <div class="game-actions">
+                        <button class="btn primary-btn" onclick="analyzeThis()">📊 Analizar esta partida</button>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN HISTORIAL -->
+                <div id="section-history" class="app-section hidden">
+                    <div class="glass-panel" style="padding: 30px;">
+                        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 20px;">
+                            <h2>Tus últimas partidas</h2>
+                            <button class="btn" onclick="clearHistory()">Vaciar Historial</button>
+                        </div>
+                        <div id="history-list-container">
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Modo</th>
+                                        <th>Resultado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-tbody"></tbody>
+                            </table>
+                            <div id="history-empty" class="hidden" style="text-align:center; padding:50px; color:var(--text-secondary);">
+                                <p>Aún no has jugado ninguna partida.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Overlay de Resultado (Modal Global) -->
+        <div id="result-overlay" class="result-modal-container hidden">
+            <div class="result-modal-content glass-panel">
+                <h2 id="result-title">¡Fin de Partida!</h2>
+                <p id="result-subtitle">Jaque mate</p>
+                <div class="modal-actions">
+                    <button class="btn primary-btn" onclick="resetToConfig()">Volver al Menú</button>
+                    <button class="btn" onclick="closeResultModal()">Cerrar</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -162,6 +312,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     
     <script src="./js/app.js?v=2.0"></script>
+    <script src="./js/game.js?v=1.0"></script>
     
     <script>
         if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
